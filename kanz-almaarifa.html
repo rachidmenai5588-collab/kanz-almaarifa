@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>كنز المعرفة — لعبة المعلومات الثقافية</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+    background: #0f2440; color: #fff; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; padding: 20px 14px 32px;
+  }
+  .wrap { width: min(92vw, 480px); }
+  h1 { margin: 0 0 4px; font-size: 36px; text-align: center; color: #ffd166; }
+  .tag { margin: 0 0 20px; text-align: center; color: #b8c6d9; font-size: 15px; }
+  .card {
+    background: #1a3a5c; border-radius: 16px; padding: 22px 18px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.35);
+  }
+  .cats { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 18px; }
+  .chip {
+    border: 2px solid #3d5f83; background: transparent; color: #dbe7f3;
+    border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .chip.sel { background: #ffd166; border-color: #ffd166; color: #0f2440; }
+  button.big {
+    width: 100%; border: 0; border-radius: 12px; background: #ffd166; color: #0f2440;
+    font-size: 19px; font-weight: 800; padding: 14px; cursor: pointer;
+  }
+  button.big:active { transform: scale(.98); }
+  .best-line { text-align: center; color: #8fb0d3; font-size: 13px; margin-top: 12px; }
+  /* quiz */
+  .topbar { display: flex; justify-content: space-between; font-weight: 700; font-size: 15px; margin-bottom: 10px; }
+  .topbar .streak { color: #ff9f43; }
+  .timer-wrap { height: 8px; background: #0f2440; border-radius: 99px; overflow: hidden; margin-bottom: 18px; }
+  .timer-bar { height: 100%; background: #2ed573; border-radius: 99px; transition: width .1s linear; }
+  .timer-bar.low { background: #ff6b6b; }
+  .q-text { font-size: 21px; font-weight: 800; line-height: 1.6; margin: 0 0 18px; min-height: 68px; }
+  .opts { display: grid; gap: 10px; }
+  .opt {
+    border: 2px solid #3d5f83; background: #24466b; color: #fff; border-radius: 12px;
+    padding: 13px 14px; font-size: 17px; font-weight: 700; text-align: right; cursor: pointer; width: 100%;
+  }
+  .opt:active { transform: scale(.98); }
+  .opt.correct { background: #2ed573; border-color: #2ed573; color: #062b16; }
+  .opt.wrong { background: #ff6b6b; border-color: #ff6b6b; color: #fff; }
+  .opt:disabled { opacity: 1; cursor: default; }
+  .feedback { min-height: 26px; text-align: center; font-weight: 800; font-size: 16px; margin-top: 14px; }
+  .feedback.good { color: #2ed573; }
+  .feedback.bad { color: #ff6b6b; }
+  /* result */
+  .result { text-align: center; }
+  .result .big-score { font-size: 56px; font-weight: 900; color: #ffd166; margin: 6px 0; }
+  .result p { color: #b8c6d9; font-size: 16px; line-height: 1.7; }
+  .result .msg { color: #fff; font-size: 20px; font-weight: 800; }
+  .row-btns { display: grid; gap: 10px; margin-top: 18px; }
+  .row-btns button { border: 0; border-radius: 12px; padding: 13px; font-size: 16px; font-weight: 800; cursor: pointer; }
+  .btn-gold { background: #ffd166; color: #0f2440; }
+  .btn-ghost { background: transparent; border: 2px solid #3d5f83 !important; color: #dbe7f3; }
+  .hidden { display: none !important; }
+  .foot { margin-top: 20px; font-size: 12px; color: #6f8cae; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>كنز المعرفة</h1>
+  <p class="tag">لعبة معلومات ثقافية — 42 سؤالاً في 6 فئات</p>
+
+  <!-- START -->
+  <div class="card" id="screen-start">
+    <p style="text-align:center;font-weight:700;margin:0 0 12px">اختر الفئة:</p>
+    <div class="cats" id="cats"></div>
+    <button class="big" id="btn-start">ابدأ اللعب</button>
+    <p class="best-line" id="best-line"></p>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="card hidden" id="screen-quiz">
+    <div class="topbar">
+      <span id="q-progress">سؤال 1 من 10</span>
+      <span id="q-score">النقاط: 0</span>
+      <span class="streak" id="q-streak"></span>
+    </div>
+    <div class="timer-wrap"><div class="timer-bar" id="timer-bar"></div></div>
+    <p class="q-text" id="q-text"></p>
+    <div class="opts" id="opts"></div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="card hidden result" id="screen-result">
+    <p style="margin:0;color:#8fb0d3">نتيجتك</p>
+    <div class="big-score" id="r-score">0</div>
+    <p class="msg" id="r-msg"></p>
+    <p id="r-detail"></p>
+    <div class="row-btns">
+      <button class="btn-gold" id="btn-again">العب مجدداً</button>
+      <button class="btn-ghost" id="btn-cats">غيّر الفئة</button>
+    </div>
+  </div>
+
+  <p class="foot">صُنعت بواسطة رشيد مناعي · كنز المعرفة v1.0</p>
+</div>
+
+<script>
+/* ---- Question bank: {c: category, q: question, o: [4 options], a: correct index} ---- */
+const QUESTIONS = [
+  // التاريخ
+  { c: "التاريخ", q: "في أي سنة استقلت الجزائر؟", o: ["1962", "1954", "1970", "1945"], a: 0 },
+  { c: "التاريخ", q: "في أي سنة انتهت الحرب العالمية الثانية؟", o: ["1918", "1945", "1939", "1950"], a: 1 },
+  { c: "التاريخ", q: "من كان أول رئيس للجزائر بعد الاستقلال؟", o: ["هواري بومدين", "أحمد بن بلة", "الشاذلي بن جديد", "فرحات عباس"], a: 1 },
+  { c: "التاريخ", q: "من أول من طار بطائرة بمحرك؟", o: ["توماس إديسون", "الأخوان رايت", "ألبرت أينشتاين", "غراهام بيل"], a: 1 },
+  { c: "التاريخ", q: "في أي سنة هبط الإنسان أول مرة على سطح القمر؟", o: ["1959", "1969", "1975", "1980"], a: 1 },
+  { c: "التاريخ", q: "من أول إنسان سافر إلى الفضاء؟", o: ["نيل أرمسترونغ", "يوري غاغارين", "بز ألدرين", "فالنتينا تيريشكوفا"], a: 1 },
+  { c: "التاريخ", q: "من بنى أهرامات الجيزة؟", o: ["الرومان", "المصريون القدماء", "الإغريق", "الفرس"], a: 1 },
+  // الجغرافيا
+  { c: "الجغرافيا", q: "ما هي عاصمة أستراليا؟", o: ["سيدني", "كانبرا", "ملبورن", "بيرث"], a: 1 },
+  { c: "الجغرافيا", q: "ما هو أطول أنهار العالم؟", o: ["الأمازون", "النيل", "اليانغتسي", "الدانوب"], a: 1 },
+  { c: "الجغرافيا", q: "ما هي أكبر صحراء حارة في العالم؟", o: ["الربع الخالي", "الصحراء الكبرى", "غوبي", "كالاهاري"], a: 1 },
+  { c: "الجغرافيا", q: "ما هي عاصمة كندا؟", o: ["تورونتو", "أوتاوا", "فانكوفر", "مونتريال"], a: 1 },
+  { c: "الجغرافيا", q: "ما هي أكبر جزيرة في العالم؟", o: ["مدغشقر", "غرينلاند", "سومطرة", "بريطانيا"], a: 1 },
+  { c: "الجغرافيا", q: "ما هو أكبر محيطات العالم؟", o: ["الأطلسي", "الهادئ", "الهندي", "المتجمد الشمالي"], a: 1 },
+  { c: "الجغرافيا", q: "ما هو النهر الذي يمر عبر باريس؟", o: ["الدانوب", "السين", "التايمز", "الراين"], a: 1 },
+  // العلوم
+  { c: "العلوم", q: "ما هو الكوكب الملقب بالكوكب الأحمر؟", o: ["الزهرة", "المريخ", "المشتري", "زحل"], a: 1 },
+  { c: "العلوم", q: "كم عدد كواكب المجموعة الشمسية؟", o: ["7", "8", "9", "10"], a: 1 },
+  { c: "العلوم", q: "ما هو الرمز الكيميائي للماء؟", o: ["CO2", "H2O", "O2", "NaCl"], a: 1 },
+  { c: "العلوم", q: "من وضع نظرية النسبية؟", o: ["نيوتن", "أينشتاين", "غاليليو", "دارون"], a: 1 },
+  { c: "العلوم", q: "كم تبلغ سرعة الضوء تقريباً؟", o: ["150 ألف كم/ثا", "300 ألف كم/ثا", "500 ألف كم/ثا", "مليون كم/ثا"], a: 1 },
+  { c: "العلوم", q: "ما هو أكبر عضو في جسم الإنسان؟", o: ["الكبد", "الجلد", "القلب", "العظم"], a: 1 },
+  { c: "العلوم", q: "ما هو أسرع حيوان بري؟", o: ["الأسد", "الفهد", "الحصان", "الغزال"], a: 1 },
+  // الرياضة
+  { c: "الرياضة", q: "كم مرة فازت البرازيل بكأس العالم لكرة القدم؟", o: ["4", "5", "6", "3"], a: 1 },
+  { c: "الرياضة", q: "كم عدد لاعبي فريق كرة القدم داخل الملعب؟", o: ["10", "11", "9", "12"], a: 1 },
+  { c: "الرياضة", q: "كم دقيقة تدوم مباراة كرة القدم؟", o: ["80", "90", "100", "120"], a: 1 },
+  { c: "الرياضة", q: "أين أقيمت أولمبياد 2024؟", o: ["طوكيو", "باريس", "لندن", "ريو"], a: 1 },
+  { c: "الرياضة", q: "كم عدد لاعبي فريق كرة السلة داخل الملعب؟", o: ["6", "5", "7", "4"], a: 1 },
+  { c: "الرياضة", q: "في أي رياضة يُستخدم مصطلح «الشاه مات»؟", o: ["التنس", "الشطرنج", "الغولف", "الملاكمة"], a: 1 },
+  { c: "الرياضة", q: "كم عدد الحلقات في الشعار الأولمبي؟", o: ["4", "5", "6", "7"], a: 1 },
+  // الفنون
+  { c: "الفنون", q: "من رسم لوحة الموناليزا؟", o: ["بيكاسو", "ليوناردو دافنشي", "فان غوخ", "رامبرانت"], a: 1 },
+  { c: "الفنون", q: "من كتب رواية البؤساء؟", o: ["شكسبير", "فيكتور هوغو", "تولستوي", "ديكنز"], a: 1 },
+  { c: "الفنون", q: "من ألف ملحمة الأوديسة؟", o: ["فيرجيل", "هوميروس", "سوفوكليس", "أفلاطون"], a: 1 },
+  { c: "الفنون", q: "كم عدد مفاتيح البيانو؟", o: ["76", "88", "96", "108"], a: 1 },
+  { c: "الفنون", q: "من كتب رواية دون كيشوت؟", o: ["موليير", "سرفانتس", "دانتي", "غوته"], a: 1 },
+  { c: "الفنون", q: "ما هي اللغة الرسمية في البرازيل؟", o: ["الإسبانية", "البرتغالية", "الفرنسية", "الإنجليزية"], a: 1 },
+  { c: "الفنون", q: "ما هي أصغر دولة في العالم؟", o: ["موناكو", "الفاتيكان", "سان مارينو", "المالديف"], a: 1 },
+  // الجزائر
+  { c: "الجزائر", q: "ما هي عملة الجزائر؟", o: ["الدرهم", "الدينار", "الريال", "الجنيه"], a: 1 },
+  { c: "الجزائر", q: "ما هي أكبر ولاية جزائرية من حيث المساحة؟", o: ["أدرار", "تمنراست", "ورقلة", "إليزي"], a: 1 },
+  { c: "الجزائر", q: "ما هو اسم النشيد الوطني الجزائري؟", o: ["موطني", "قسما", "حماة الحمى", "النشيد الشريف"], a: 1 },
+  { c: "الجزائر", q: "في أي سنة اندلعت ثورة التحرير الجزائرية؟", o: ["1945", "1954", "1962", "1930"], a: 1 },
+  { c: "الجزائر", q: "ما هو أعلى جبل في الجزائر؟", o: ["شيليا", "تاهات", "جرجرة", "الأوراس"], a: 1 },
+  { c: "الجزائر", q: "من هو مؤلف كتاب «المقدمة»؟", o: ["ابن سينا", "ابن خلدون", "ابن بطوطة", "الجاحظ"], a: 1 },
+  { c: "الجزائر", q: "كم عدد ولايات الجزائر؟", o: ["48", "58", "52", "60"], a: 1 }
+];
+
+const CATEGORIES = ["الكل", "التاريخ", "الجغرافيا", "العلوم", "الرياضة", "الفنون", "الجزائر"];
+const TIME_PER_Q = 20;
+
+/* ---- Pure helpers (testable) ---- */
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+function buildRound(category) {
+  const pool = category === "الكل" ? QUESTIONS : QUESTIONS.filter(q => q.c === category);
+  const picked = shuffle(pool).slice(0, Math.min(10, pool.length));
+  return picked.map(q => {
+    const opts = q.o.map((text, i) => ({ text, correct: i === q.a }));
+    return { q: q.q, c: q.c, opts: shuffle(opts) };
+  });
+}
+function resultMessage(ratio) {
+  if (ratio >= 0.9) return "ممتاز! أنت موسوعة متنقلة";
+  if (ratio >= 0.7) return "جيد جداً! ثقافتك قوية";
+  if (ratio >= 0.5) return "مقبول، واصل التعلم";
+  return "لا بأس، المعرفة رحلة!";
+}
+
+/* ---- UI layer (browser only) ---- */
+if (typeof document !== 'undefined') {
+  const $ = (id) => document.getElementById(id);
+  const startScreen = $('screen-start'), quizScreen = $('screen-quiz'), resultScreen = $('screen-result');
+  let selectedCat = "الكل";
+  let round = [], idx = 0, score = 0, correct = 0, streak = 0, answered = false, timerId = null, timeLeft = TIME_PER_Q;
+  let best = 0;
+  try { best = parseInt(localStorage.getItem('kanz-best') || '0', 10) || 0; } catch (e) {}
+
+  const catsEl = $('cats');
+  CATEGORIES.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (cat === selectedCat ? ' sel' : '');
+    b.textContent = cat;
+    b.addEventListener('click', () => {
+      selectedCat = cat;
+      catsEl.querySelectorAll('.chip').forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel');
+    });
+    catsEl.appendChild(b);
+  });
+  function refreshBest() {
+    $('best-line').textContent = best > 0 ? ('أفضل نتيجة لك: ' + best + ' نقطة') : '';
+  }
+  refreshBest();
+
+  function show(el) { [startScreen, quizScreen, resultScreen].forEach(s => s.classList.add('hidden')); el.classList.remove('hidden'); }
+
+  function startGame() {
+    round = buildRound(selectedCat);
+    idx = 0; score = 0; correct = 0; streak = 0;
+    show(quizScreen);
+    showQuestion();
+  }
+
+  function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+
+  function showQuestion() {
+    answered = false;
+    const item = round[idx];
+    $('q-progress').textContent = 'سؤال ' + (idx + 1) + ' من ' + round.length;
+    $('q-score').textContent = 'النقاط: ' + score;
+    $('q-streak').textContent = streak >= 2 ? ('🔥 ' + streak) : '';
+    $('q-text').textContent = item.q;
+    $('feedback').textContent = '';
+    $('feedback').className = 'feedback';
+    const optsEl = $('opts');
+    optsEl.innerHTML = '';
+    item.opts.forEach((opt) => {
+      const b = document.createElement('button');
+      b.className = 'opt';
+      b.textContent = opt.text;
+      b.addEventListener('click', () => answer(opt, b));
+      optsEl.appendChild(b);
+    });
+    timeLeft = TIME_PER_Q;
+    const bar = $('timer-bar');
+    bar.style.width = '100%';
+    bar.classList.remove('low');
+    stopTimer();
+    timerId = setInterval(() => {
+      timeLeft -= 0.1;
+      const pct = Math.max(0, (timeLeft / TIME_PER_Q) * 100);
+      bar.style.width = pct + '%';
+      if (pct < 30) bar.classList.add('low');
+      if (timeLeft <= 0) {
+        stopTimer();
+        answer(null, null, true);
+      }
+    }, 100);
+  }
+
+  function answer(opt, btn, timedOut) {
+    if (answered) return;
+    answered = true;
+    stopTimer();
+    const item = round[idx];
+    const buttons = $('opts').querySelectorAll('.opt');
+    buttons.forEach((b, i) => {
+      b.disabled = true;
+      if (item.opts[i].correct) b.classList.add('correct');
+    });
+    const fb = $('feedback');
+    if (!timedOut && opt && opt.correct) {
+      score += 10;
+      correct++;
+      streak++;
+      fb.textContent = 'إجابة صحيحة! +10';
+      fb.className = 'feedback good';
+    } else {
+      if (btn) btn.classList.add('wrong');
+      streak = 0;
+      fb.textContent = timedOut ? 'انتهى الوقت!' : 'إجابة خاطئة';
+      fb.className = 'feedback bad';
+    }
+    $('q-score').textContent = 'النقاط: ' + score;
+    $('q-streak').textContent = streak >= 2 ? ('🔥 ' + streak) : '';
+    setTimeout(() => {
+      idx++;
+      if (idx < round.length) showQuestion();
+      else showResult();
+    }, 1200);
+  }
+
+  function showResult() {
+    show(resultScreen);
+    $('r-score').textContent = score;
+    const ratio = round.length ? correct / round.length : 0;
+    $('r-msg').textContent = resultMessage(ratio);
+    $('r-detail').textContent = 'أجبت صحيحاً على ' + correct + ' من ' + round.length + ' أسئلة · فئة: ' + selectedCat;
+    if (score > best) {
+      best = score;
+      try { localStorage.setItem('kanz-best', String(best)); } catch (e) {}
+    }
+    refreshBest();
+  }
+
+  $('btn-start').addEventListener('click', startGame);
+  $('btn-again').addEventListener('click', startGame);
+  $('btn-cats').addEventListener('click', () => { show(startScreen); refreshBest(); });
+}
+</script>
+</body>
+</html>
